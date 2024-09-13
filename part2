@@ -1,0 +1,43 @@
+#!/bin/bash
+#call using './part2'
+filename='filteredfile'
+data_holder='serverdata'
+mkdir $data_holder
+#make directory that holds the directories of the webservers
+
+i=0
+
+cat $filename | while read -r line
+
+do
+
+    ((i++))
+
+    OLDIFS=$IFS
+
+    IFS='/'
+
+    j=0
+
+    for word in $line
+
+    do
+
+        ((j++)) 
+
+        if [ $j -eq 3 ]
+
+        # if it is the third word, it is the first directory (web server name)
+
+        then
+
+            directory_path=$word
+		#-p makes it so there is no error since serverdata already exists
+		mkdir -p $data_holder/$directory_path 
+       		#echo $directory_path
+	fi
+    done
+
+    IFS=$OLDIFS
+
+done

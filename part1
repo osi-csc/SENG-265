@@ -1,0 +1,14 @@
+#! /bin/bash
+#Instructions: the file with the links must be named oglinks. After which, to run this script, call './part1'
+
+#preprocessing
+#loop through each line of the links file
+
+filename='oglinks'
+	
+#check if there is .png, .jpg, .gif, .mp3, .mp4	
+
+touch filteredfile
+newfile='filteredfile'
+grep -v "png\|jpg\|gif\|mp3\|mp4" $filename > $newfile
+

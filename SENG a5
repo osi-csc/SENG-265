@@ -1,0 +1,128 @@
+#!/usr/bin/env python3
+
+import sys
+
+import os
+
+#sort terms by rows and files by columns (ALPHABETICALLY)
+
+#Parameters: Input directory and Output directory
+
+#output: td_matrix.txt, sorted_terms.txt, sorted_documents.txt
+
+
+def list_terms(l_fpaths):
+    #creates a sorted list of words
+    low=[] #list of words
+    for fpath in l_fpaths: #for file in list of files
+        f=open(fpath,"r")
+        for line in f: #for line in file
+            words=line.split()
+            low.append(words[0])
+
+    low=set(low)#sets do not allow duplicates
+    low=sorted(low)#sorted will sort the words and change the set back into a list
+    return low
+
+
+def sort_term(list_terms,outpath):
+#creates a txt file to output path of sorted terms (JUST THE TERMS)
+    f_txt=open(outpath,"w")
+    i=0
+    while i<(len(list_terms)-1): #go to second to last term
+        f_txt.write(list_terms[i])
+        f_txt.write('\n')#writes the term and goes to next line
+        i+=1
+    f_txt.write(list_terms[-1])#last term does not have new line
+    
+    f_txt.close()
+
+def sort_doc(filenames,outpath):
+    #creates txt file to output path of input document names
+
+    f=open(outpath,"w")#creates a new file
+    i=0
+    while i<(len(filenames)-1):#this will go to second to last filename
+        f.write(filenames[i])#filename
+        f.write('\n')#new line
+        i+=1
+    f.write(filenames[-1])#write last element w out the new line
+
+    f.close()
+
+def td_matrix(sorted_files_path, sorted_terms,outpath):
+    #creates matrix and txt file
+    td_matrix={}
+
+    f=open(outpath,"w")#creates new file
+    
+    num_rows=len(sorted_terms)
+    num_columns=len(sorted_files_path)
+    f.write(num_rows+" "+num_columns)
+    
+    #now, create sparse matrix where the (term index,file index) are the coords the cell
+    for a in num_columns: #index of file
+        rf=open(sorted_files_path[a],"r")#open and read filepath 
+        for line in rf:
+            term=line.split()
+            #term[1] is the cell, now find index
+            index_word=sorted_terms.index(term[0])
+            td_matrix[(a,index_word)]=term[1]
+
+    #after completing the dictionary, write() the matrix
+    for y in num_rows:#first row: write all files, then second row: write all files, etc
+        for x in num_columns:
+            f.write(td_matrix.get((y,x),0), end=' ') #get the value and if it does not exist, put 0
+    
+
+    f.close()
+
+
+def main():
+
+    indir=sys.argv[1] #input directory
+
+    outdir=sys.argv[2] #output directory
+
+
+
+    if os.path.isdir(outdir) is False: #if directory does not exist
+
+        os.mkdir(outdir)#create directory
+
+    #all output paths
+    out_term_path=os.path.join(outdir,"sorted_terms.txt")
+
+    out_doc_path=os.path.join(outdir,"sorted_documents.txt")
+
+    out_td_path=os.path.join(outdir,"td_matrix.txt")
+
+
+    lof=os.listdir(indir) #os.listdir(path) gets a str list of all names in the directory
+
+    lof=sorted(lof)
+
+
+    #sorted_documents.txt
+
+    sort_doc(lof,out_doc_path)#takes:(list of files, output file path)
+
+    #sorted_terms.txt
+
+    lofp=[] #list of file paths
+
+    for f in lof:
+        lofp.append(os.path.join(indir,f))#path to each file in the input directory gets added to list
+    #since lof is already sorted, the paths are listed in a sorted manner
+
+    low=list_terms(lofp)
+    sort_term(low,out_term_path)#takes:(list of file paths,output file path)
+
+    #td_matrix.txt
+    td_matrix(lofp,low,out_td_path)
+
+
+
+
+if __name__ == "__main__":
+     main()

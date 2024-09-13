@@ -1,0 +1,56 @@
+#! /bin/bash
+#make sub directories with mkdir -p
+#call using './part3'
+
+filename='filteredfile'
+data_holder='serverdata'
+i=0
+
+cat $filename | while read -r line
+
+do
+
+    ((i++))
+
+    OLDIFS=$IFS
+
+    IFS='/'
+
+    directory_path=''
+
+    j=0
+
+    for word in $line
+
+    do
+
+        ((j++)) 
+	#echo "Word $j: $word"
+
+        if [ $j -eq 3 ]
+	then
+        # third word is webserver
+        directory_path=$word
+
+        elif [[ $j -gt 3 && ! $word == *.???* ]]
+
+        # if count is greater than 3 and it's not a file
+
+        then
+
+		#this is the rest of the directories that must be created
+		#echo "Subdirectory: "$word
+		directory_path=$directory_path'/'$word
+
+        fi
+
+    done
+
+    IFS=$OLDIFS
+
+   
+ echo $data_holder/$directory_path
+mkdir -p $data_holder/$directory_path
+
+done
+
