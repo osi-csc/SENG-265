@@ -1,0 +1,144 @@
+#!/usr/bin/env python3
+
+import sys
+import os
+
+#cmd line arguement: index; tdm-generator results (PATH TO A DIRECTORY W THE FILES) ->use argv
+#stdin-string of a txt file (DONT NEED TO READ FILE) 
+#program calculates the similarity to tdm-generator's term count and files
+#stdout: print ("Cos_similarity filename1" new line "cos_sim filename2" etc)
+
+
+def query_vector(query, term_path): #converts input str into a sparse matrix
+     #tokenize each index, [0] is the term, [1] is the frequency
+     qv={} #query_vector dictionary, #key=index, value=term count
+
+     f=open(term_path,"r")
+
+     j=0 #current line, which is also the index
+
+     for line in f:
+          word=line.split()
+
+          i=0 #for iterating in the while loop
+
+          while query[i][0]!=word[0] and i<len(query): #loops until end of query list or if the terms are the same
+               if query[i][0]==word[0]:
+                    qv[j]=query[i][1] #index:term count
+               i+=1
+
+          j+=1
+     #convert items strs into int
+     new_qv=[(key,int(value)) for key,value in qv.items()]
+
+     return new_qv
+
+#if stdin word isn't in term.txt, then the index will just go forward without being but in the dictionary.
+
+
+def vector(term_path,matrix_path): 
+     #returns a list of sparse dictionaries
+     all_vectors=[]
+
+     f=open(matrix_path,"r")
+
+     dimensions=(f.readline()).split() #num of terms and num of files
+     num_files=int(dimensions[1])
+
+     #create num_files amount of dictionaries
+     for i in range(num_files):
+          new_dict={}
+          all_vectors.append(new_dict)
+
+     term_index=0
+     for line in f:#starts at second line (hopefully)
+          words=line.split()
+          #using the num of files, each line will split into that amount of "words"
+          #key is line number (STARTING FROM 1), and frequency is words[file_number](STARTING FROM 0)
+          for i in range(num_files):
+               all_vectors[i][term_index]=words[i] #fill dictionary i with key=index, value=word count
+          
+          term_index+=1#next line is next index
+
+     return all_vectors
+#the dictionaries are sorted in the order of sorted_documents
+
+
+def similarity(qv, matrix_vectors,filenames):
+     #opens td_matrix.py and the vectors of the individual files
+     #compute cosine similarity for each file
+
+     #matrix_vectors is a list(files) of dictionaries(terms and frequencies)
+          
+     similarity_file={} #key is the file, value is similarity
+     
+     length=len(qv)
+     i=0
+     fileindex=0
+     #Sc=(summation of CountA[i]*CountB[i] from index 0 to len(list))/(sqrt summation CountA[i]^2 from index 0 to len(list)*(sqrt summation CountB[i]^2 from index 0 to len(list))
+     #calculations for comparison for each vector
+     for v in matrix_vectors:
+          #each new file vectors needs these reset
+          numerator=0
+          denominatorA=0
+          denominatorB=0
+
+          #summation of numerator
+          for i in range(length-1):#length-1 bc the index starts at 0
+               numerator=qv.get(i,0)*v.get(i,0) #get value at that index, if it doesnt exist, use 0
+
+          #summation of denominatorA
+          for j in range(length-1):
+               denominatorA+=qv.get(j,0)**2
+         
+          denominatorA=(denominatorA)**0.5
+
+          #summation of denominatorB
+          for k in range(length-1):
+               denominatorB+=v.get(k,0)**2
+         
+          denominatorB=(denominatorB)**0.5
+
+          #put it all together
+          answer=round((numerator/denominatorA*denominatorB),4)
+
+          #file name with the similarity
+          filename=filenames[fileindex]
+          similarity_file[filename]=answer
+          fileindex+=1
+
+     #loop end, everything is neatly in a dictionary
+     similarity_file=sorted(similarity_file.items(), key=lambda x:x[1], reverse=True) #sorted makes this a list of tuples
+     
+     for j in similarity_file: #j is the tuple pair (filename,Sc)
+          print(j[1]+" "+j[0]) #j[1] is the name, j[0] is the similarity
+
+
+def main():
+     dir=sys.argv[1] #path to directory, reads from command line
+
+     query=[]
+    
+     for line in sys.stdin: #reads each line of the stdin string
+         word=line.split() #individual term and it's frequency is one index in the list
+         query.append(word) #[["word","number"]["each sublist is","a line"]]
+
+
+     td_matrix_path=os.path.join(dir,"td_matrix.txt")
+     term_path=os.path.join(dir,"sorted_terms.txt")
+     file_path=os.path.join(dir,"sorted_documents.txt")
+
+     file_names=[]
+     f=open(file_path,"r")
+     for line in f:
+          file_names.append(line) #add each file name to list, in sorted order
+
+     qv=query_vector(query,term_path)
+
+     mv=vector(term_path, td_matrix_path)
+
+     similarity(qv,mv,file_names) #function outputs the end result
+
+
+if __name__ == "__main__":
+     main()
